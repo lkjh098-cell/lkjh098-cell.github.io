@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>닫힌 문 제로 — 지금 갈 수 있는 서울을, 지금 필요한 순서로</title>
+<meta name="description" content="비짓서울 API의 운영시간·휴무일·행사기간·장애인 편의시설 정보를 판정 가능한 형태로 바꿔, 지금 실제로 들어갈 수 있는 곳만 보여주는 서비스 프로젝트.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+  :root{
+    --ink:#14181C;
+    --ink-soft:#4A5259;
+    --ink-faint:#868E95;
+    --base:#F1F3F2;
+    --card:#FFFFFF;
+    --open:#1F6F4A;
+    --shut:#9AA1A7;
+    --rule:#DCE0DE;
+    --measure:66ch;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:var(--base);
+    color:var(--ink);
+    font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,
+                "Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+    font-size:17px;
+    line-height:1.72;
+    letter-spacing:-.005em;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px}
+  a{color:var(--open);text-decoration:underline;text-underline-offset:3px}
+  a:focus-visible,button:focus-visible{outline:2px solid var(--open);outline-offset:3px;border-radius:2px}
+
+  /* ── 머리 ── */
+  header{padding:88px 0 0}
+  .status{
+    display:inline-block;font-size:13.5px;color:var(--ink-faint);
+    border:1px solid var(--rule);border-radius:999px;padding:3px 12px;background:var(--card);
+  }
+  h1{
+    font-family:"Gowun Batang","Nanum Myeongjo",serif;
+    font-weight:700;font-size:clamp(34px,6.4vw,52px);line-height:1.28;
+    letter-spacing:-.02em;margin:22px 0 0;max-width:14ch;
+  }
+  .lede{margin:20px 0 0;max-width:var(--measure);color:var(--ink-soft);font-size:18px}
+
+  /* ── 판정 결과 미리보기 ── */
+  .demo{margin:44px 0 0;background:var(--card);border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+  .demo-head{padding:18px 20px;border-bottom:1px solid var(--rule)}
+  .demo-head p{margin:0 0 10px;font-size:14px;color:var(--ink-faint)}
+  .cond{display:flex;flex-wrap:wrap;gap:7px}
+  .cond span{
+    font-size:14px;background:var(--base);border:1px solid var(--rule);
+    border-radius:6px;padding:3px 10px;color:var(--ink-soft);
+  }
+  .row{display:flex;gap:14px;padding:16px 20px;border-bottom:1px solid var(--rule)}
+  .row:last-child{border-bottom:0}
+  .bar{width:3px;border-radius:2px;flex:none;background:var(--open)}
+  .row.shut .bar{background:var(--shut)}
+  .row h3{margin:0;font-size:16.5px;font-weight:600;line-height:1.5}
+  .row.shut h3{color:var(--shut);text-decoration:line-through;text-decoration-thickness:1px}
+  .why{margin:7px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .why b{
+    font-weight:400;font-size:13.5px;color:var(--open);
+    border:1px solid rgba(31,111,74,.28);border-radius:5px;padding:1px 8px;
+  }
+  .row.shut .why b{color:var(--shut);border-color:var(--rule)}
+  .empty{padding:16px 20px;font-size:14.5px;color:var(--ink-soft);background:var(--base)}
+  .caption{margin:12px 0 0;font-size:13.5px;color:var(--ink-faint)}
+
+  /* ── 본문 ── */
+  section{padding:56px 0 0}
+  h2{
+    font-family:"Gowun Batang","Nanum Myeongjo",serif;
+    font-size:24px;font-weight:700;letter-spacing:-.01em;margin:0 0 14px;
+  }
+  p{margin:0 0 14px;max-width:var(--measure)}
+  dl{margin:0;border-top:1px solid var(--rule)}
+  .item{display:grid;grid-template-columns:88px 1fr;gap:18px;padding:13px 0;border-bottom:1px solid var(--rule)}
+  dt{font-weight:600;font-size:15.5px}
+  dd{margin:0;color:var(--ink-soft);font-size:15.5px;line-height:1.62}
+  ul{margin:0;padding-left:1.15em;max-width:var(--measure)}
+  li{margin-bottom:7px}
+  .note{
+    margin-top:18px;padding:16px 18px;background:var(--card);
+    border:1px solid var(--rule);border-radius:8px;font-size:15px;color:var(--ink-soft);
+  }
+  .note strong{color:var(--ink);font-weight:600}
+  footer{
+    margin-top:64px;padding:26px 0 72px;border-top:1px solid var(--rule);
+    font-size:14.5px;color:var(--ink-faint);
+  }
+  footer p{max-width:var(--measure);margin:0 0 6px}
+
+  @media (max-width:560px){
+    body{font-size:16px}
+    header{padding-top:56px}
+    .item{grid-template-columns:1fr;gap:2px}
+    .wrap{padding:0 20px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="status">개발 준비 중 · 2026</span>
+    <h1>닫힌 문 제로</h1>
+    <p class="lede">
+      여행을 망치는 건 나쁜 선택이 아니라 닫힌 문입니다. 종료된 전시, 오늘이 휴관인 시설,
+      계단뿐인 입구. 내 상황을 먼저 입력하면 갈 수 없는 곳을 지우고, 남은 곳을 원하는 순서로 보여줍니다.
+    </p>
+
+    <div class="demo">
+      <div class="demo-head">
+        <p>입력한 상황</p>
+        <div class="cond">
+          <span>화요일 오후 3시</span><span>3시간 남음</span><span>광화문</span>
+          <span>휠체어 동행</span><span>English</span><span>무료만</span>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="bar" aria-hidden="true"></div>
+        <div>
+          <h3>서울역사박물관</h3>
+          <div class="why">
+            <b>18:00까지</b><b>오늘 개관</b><b>엘리베이터</b><b>영어 안내</b><b>무료</b><b>도보 7분</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="bar" aria-hidden="true"></div>
+        <div>
+          <h3>돈의문박물관마을</h3>
+          <div class="why">
+            <b>19:00까지</b><b>오늘 개관</b><b>경사로</b><b>영어 안내</b><b>무료</b><b>도보 12분</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="row shut">
+        <div class="bar" aria-hidden="true"></div>
+        <div>
+          <h3>○○미술관 기획전</h3>
+          <div class="why"><b>8월 31일 종료</b><b>지난 전시</b></div>
+        </div>
+      </div>
+
+      <p class="empty">
+        조건에 맞는 곳이 없으면 빈 화면 대신 이렇게 답합니다 —
+        “40분 뒤 3곳이 열립니다.” “‘무료’ 조건을 풀면 7곳이 열립니다.”
+      </p>
+    </div>
+    <p class="caption">화면 예시입니다. 표시된 장소와 시간은 설명을 위한 것입니다.</p>
+  </header>
+
+  <section>
+    <h2>갈 수 없는 곳을 먼저 지웁니다</h2>
+    <p>여섯 가지를 함께 봅니다. 하나만 통과해서는 소용이 없기 때문입니다. 휠체어로 갈 수 있는 곳을 찾아도, 오늘 문을 닫으면 갈 수 없습니다.</p>
+    <dl>
+      <div class="item"><dt>시간</dt><dd>그 시각에 운영 중인가. 입장 마감 전인가</dd></div>
+      <div class="item"><dt>기간</dt><dd>행사가 아직 진행 중인가</dd></div>
+      <div class="item"><dt>접근</dt><dd>휠체어·유모차로 들어가고 이용할 수 있는가</dd></div>
+      <div class="item"><dt>언어</dt><dd>내 언어로 안내를 받을 수 있는가</dd></div>
+      <div class="item"><dt>비용</dt><dd>무료 조건에 맞는가</dd></div>
+      <div class="item"><dt>규제</dt><dd>지금 방문이 허용된 구역인가</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <h2>남은 곳을 원하는 순서로 정렬합니다</h2>
+    <p>가까운 순, 빨리 닿는 순, 무료 먼저처럼 익숙한 기준에 더해, 운영 정보를 구조화해야만 만들 수 있는 기준을 둡니다.</p>
+    <ul>
+      <li><strong>오늘 마감 임박순</strong> — 지금 가지 않으면 오늘은 갈 수 없는 곳부터</li>
+      <li><strong>종료 임박순</strong> — 곧 끝나는 전시와 축제부터</li>
+      <li><strong>한산한 순</strong> — 인기순의 반대. 몰리는 곳을 피하고 싶을 때</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>쓰는 데이터</h2>
+    <p>서울 공식 관광 정보를 원본으로 씁니다. 여기에 시점 판단에 필요한 공공데이터를 결합합니다.</p>
+    <dl>
+      <div class="item">
+        <dt>원본</dt>
+        <dd>비짓서울 API — 운영시간, 휴무일, 영업일, 행사 시작·종료일, 장애인 편의시설, 안내 언어, 이용요금, 좌표, 지하철 정보</dd>
+      </div>
+      <div class="item">
+        <dt>결합</dt>
+        <dd>공휴일 정보, 기상청 날씨·기상특보, 대중교통 소요시간, 서울시 실시간 도시데이터, 관광 특별관리지역 규제 정보</dd>
+      </div>
+    </dl>
+    <div class="note">
+      <strong>판정할 수 없으면 판정하지 않습니다.</strong>
+      휴무일 정보가 “공휴일을 제외한 매주 월요일, 다만 월요일이 휴일인 경우 정상 개관”처럼
+      예외가 겹쳐 확신할 수 없을 때는, 갈 수 있다고 말하지 않고 ‘확인 필요’로 따로 표시합니다.
+      틀린 ‘가능’은 헛걸음을 만들지만, 정직한 ‘확인 필요’는 만들지 않습니다.
+    </div>
+  </section>
+
+  <section>
+    <h2>개인정보를 받지 않습니다</h2>
+    <p>회원가입도 로그인도 없습니다. 위치는 조회하는 순간에만 쓰고 저장하지 않으며, 동행 조건은 화면을 닫으면 사라집니다.</p>
+  </section>
+
+  <footer>
+    <p>2026 서울관광재단 비짓서울 API 데이터·AI 활용 아이디어 공모전 출품을 준비하며 만들고 있는 개인 프로젝트입니다. 서울관광재단과 공식적인 관련이 없습니다.</p>
+    <p>문의 【이메일 주소를 넣으세요】</p>
+  </footer>
+
+</div>
+</body>
+</html>
