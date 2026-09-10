@@ -7,102 +7,95 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="shared.css">
 <style>
-.head{background:#fff;border-bottom:1px solid var(--line)}.head .wrap{padding:22px 24px 18px}
-.head h1{margin:0 0 6px;font-size:24px;font-weight:800;letter-spacing:-.025em}
-.cond{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.cond .chip.lead{background:var(--soft);border-color:transparent;color:var(--c5)}
-.layout{display:grid;grid-template-columns:1fr 420px;gap:20px;padding:20px 0 40px;align-items:start}
-@media(max-width:1000px){.layout{grid-template-columns:1fr}.mapcol{order:-1}.mapbox .m{height:300px}}
-.res-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
-.res-head h2{margin:0;font-size:18px;font-weight:800}.res-head h2 b{color:var(--c5)}
-.sort select{font-size:13.5px;font-weight:600;border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:#fff}
-.excl{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:13.5px;color:var(--ink2)}
-.excl b{color:var(--ink)}.excl .ax{display:inline-block;margin:4px 8px 0 0;padding:2px 8px;border-radius:8px;background:var(--shutbg);color:var(--shut);font-weight:600}
+.head{background:#fff;border-bottom:1px solid var(--line)}.head .wrap{padding:16px 24px 14px}
+.head h1{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.025em}
+.cond{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.cond .chip.lead{background:var(--soft);border-color:transparent;color:var(--c5)}
+.layout{display:grid;grid-template-columns:1fr 400px;gap:20px;padding:16px 0 40px;align-items:start}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}.mapcol{position:static}.mapbox .m{height:260px}.mapbox[hidden]{display:none}}
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.res-head h2{margin:0;font-size:17px;font-weight:800}.res-head h2 b{color:var(--c5)}
+.sort select{font-size:13.5px;font-weight:600;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;min-height:40px}
+.meta{font-size:12.5px;color:var(--muted);margin:0 0 10px}.meta b{color:var(--ink)}
 .cards{display:flex;flex-direction:column;gap:10px}
-.shut-h{margin:18px 0 8px;font-size:13px;color:var(--muted);font-weight:700}
-.empty{background:linear-gradient(135deg,var(--soft),#EAF1FF);border-radius:16px;padding:18px 20px}.empty[hidden]{display:none}.empty h3{margin:0 0 6px;font-size:16px}.empty ul{margin:0;padding-left:1.1em;color:var(--ink2);font-size:14px}
-.mapcol{position:sticky;top:76px}
-.src{margin-top:10px;font-size:12.5px;color:var(--muted)}
-.loading{padding:40px;text-align:center;color:var(--muted)}
+.card .img img{width:100%;height:100%;object-fit:cover;display:block}
+.sk{background:#fff;border:1px solid var(--line);border-radius:18px;height:124px;position:relative;overflow:hidden}.sk:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);animation:sh 1.2s infinite}@keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){.sk:after{animation:none}}
+details.excl{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px}details.excl summary{cursor:pointer;font-weight:700;font-size:14px;list-style:none;display:flex;justify-content:space-between}details.excl summary:after{content:"열기"}details.excl[open] summary:after{content:"닫기"}
+details.excl .ax{display:inline-block;margin:6px 6px 0 0;padding:2px 8px;border-radius:8px;background:var(--shutbg);color:var(--shut);font-weight:600;font-size:12.5px}
+.empty{background:linear-gradient(135deg,var(--soft),#EAF1FF);border-radius:16px;padding:16px 18px}.empty h3{margin:0 0 6px;font-size:16px}.empty ul{margin:0;padding-left:1.1em;color:var(--ink2);font-size:14px}
+.errbox{background:#fff;border:1px solid #F0D9B5;border-radius:16px;padding:18px 20px}.errbox h3{margin:0 0 6px;font-size:17px;color:var(--warn)}.errbox p{margin:0 0 12px;color:var(--ink2);font-size:14px}
+.errbox .row{display:flex;gap:8px;flex-wrap:wrap}
+.demo-banner{background:#FFF4E5;color:var(--warn);border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mapcol{position:sticky;top:76px}.maptoggle{display:none;margin-bottom:10px}@media(max-width:1000px){.maptoggle{display:inline-flex}}
+.src{margin-top:12px;font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap">
-  <a href="index.html" style="display:flex;align-items:center"><img src="logo-black.png" alt="ZERO PROBLEMS 닫힌 문제로 로고"><span class="sub">닫힌 문제로</span></a>
-  <a class="btn btn-ghost" href="index.html">조건 다시 고르기</a>
-</div></header>
-
-<div class="head"><div class="wrap">
-  <h1>지금 갈 수 있는 곳</h1>
-  <div class="cond" id="cond"></div>
-</div></div>
-
+<header class="top"><div class="wrap"><a href="index.html" style="display:flex;align-items:center"><img src="logo-black.png" alt="ZERO PROBLEMS 로고"><span class="sub">닫힌 문제로</span></a><a class="btn btn-ghost" href="index.html">조건 다시 고르기</a></div></header>
+<div class="head"><div class="wrap"><h1>지금 갈 수 있는 곳</h1><div class="cond" id="cond"></div></div></div>
 <main class="wrap layout">
-  <section aria-live="polite">
-    <div class="res-head"><h2 id="cnt">불러오는 중…</h2><div class="sort">정렬 <select id="sort"></select></div></div>
-    <div class="excl" id="excl" hidden></div>
-    <div id="err" class="notice" hidden></div>
-    <div class="cards" id="cards"><div class="loading">후보를 수집하고 판정하는 중…</div></div>
+  <section aria-live="polite" aria-busy="true" id="results">
+    <div id="demoBanner" class="demo-banner" hidden><span>시연 데이터 모드 — 비짓서울 API 실시간 값이 아닙니다.</span><button class="chip" id="demoOff">실시간으로 전환</button></div>
+    <div class="res-head"><h2 id="cnt">불러오는 중…</h2><div class="sort"><label for="sort">정렬</label> <select id="sort"></select></div></div>
+    <p class="meta" id="meta"></p>
+    <button class="btn btn-ghost maptoggle" id="maptoggle" aria-expanded="false" aria-controls="mapbox">지도 보기</button>
+    <div id="err" hidden></div>
+    <div class="cards" id="cards"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
     <div class="empty" id="empty" hidden><h3>지금 조건에 맞는 곳이 없습니다</h3><ul id="tips"></ul></div>
-    <div id="shutwrap" hidden><div class="shut-h">지금은 갈 수 없는 곳 — 사유</div><div class="cards" id="shut"></div></div>
+    <details class="excl" id="excl" hidden><summary><span id="exclsum"></span></summary><div id="exclax"></div><div class="cards" id="shut" style="margin-top:10px"></div></details>
+    <details class="excl" id="chk" hidden><summary><span id="chksum"></span></summary><div class="cards" id="chkcards" style="margin-top:10px"></div></details>
     <p class="src" id="src"></p>
   </section>
-  <aside class="mapcol">
-    <div class="mapbox"><div class="m" id="map"></div>
-      <div class="legend"><span><i style="background:var(--ok)"></i>갈 수 있음</span><span><i style="background:#B0B8C1"></i>지금은 닫힘</span><span><i style="background:var(--c5)"></i>내 위치</span><span id="mapprov"></span></div></div>
-    <div id="maperr" class="notice" style="margin-top:10px" hidden></div>
-  </aside>
+  <aside class="mapcol"><div class="mapbox" id="mapbox"><div class="m" id="map"></div><div class="legend"><span><i style="background:var(--ok)"></i>갈 수 있음</span><span><i style="background:var(--c5)"></i>내 위치</span><span id="mapprov"></span></div></div><div id="maperr" class="notice" style="margin-top:10px" hidden></div></aside>
 </main>
-<footer><div class="wrap"><p>공모전 출품작 프로젝트. 서울관광재단과 공식적인 관련이 없습니다. 좌표·주소는 실제이며 운영정보는 공개 안내 기준 시연 표본입니다. 실제 서비스는 비짓서울 API 실시간 값으로 판정합니다. 선택 조건은 이 브라우저 세션에만 저장됩니다.</p></div></footer>
-
+<footer><div class="wrap"><p>공모전 출품작 프로젝트. 서울관광재단과 공식적인 관련이 없습니다. 이동시간은 추정치이며, 정보가 없는 항목은 “정보 확인 필요”로 표시합니다. 선택 조건은 이 브라우저 세션에만 저장됩니다. <a href="diagnostics.html">진단</a></p></div></footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="config.js" onerror="void 0"></script>
+<script src="config.js"></script>
 <script src="data.js"></script>
 <script>
 (async function(){
-  const $=id=>document.getElementById(id);
-  const S=ZP.loadState()||{origin:ZP.areas["광화문·종로"],originLabel:"광화문·종로",remain:"3",mode:"walk",langs:["ko"],who:[],what:[],why:[],access:[]};
-  if(!S.origin){S.origin=ZP.areas["광화문·종로"];S.originLabel="광화문·종로";}
-  const sel=$("sort"); Object.entries(ZP.sortLabels).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o);});
-  sel.value=ZP.defaultSort(S);
-  // 조건 요약
-  const L={ko:"한국어",en:"English",ja:"日本語","zh-CN":"中文"};
-  const conds=[...(S.who||[]),`${S.day==="tomorrow"?"내일":"오늘"} ${S.time||""} 출발`,`${S.remain==="today"?"종일":S.remain+"시간"}`,S.originLabel,...(S.what||[]),({walk:"도보",transit:"대중교통",car:"자동차"})[S.mode||"walk"],...(S.langs||[]).filter(l=>l!=="ko").map(l=>L[l]),S.budget==="free"?"무료만":null,...(S.access||[]),...(S.why||[])].filter(Boolean);
-  $("cond").innerHTML=`<span class="chip lead">내 조건</span>`+conds.map(c=>`<span class="chip">${c}</span>`).join("")+`<a class="chip" href="index.html">수정</a>`;
-  // 날씨 보강 (실패 시 무시)
-  const w=await ZP.weather(S.origin.lat,S.origin.lng); if(w){S.rainy=w.rainy;} 
-  let map=null, byId={};
-  try{ map=await ZP.map($("map"),S.origin,14,msg=>{const e=$("maperr");e.hidden=false;e.innerHTML=`${msg} <button onclick="location.reload()">다시 시도</button>`;}); $("mapprov").textContent=map?(map.provider==="google"?"Google Maps":"OpenStreetMap"):""; }catch(e){}
+  const $=id=>document.getElementById(id); const esc=ZP.esc;
+  const S=ZP.loadState(); if(!S||!S.origin){location.replace("index.html");return;}
+  const sel=$("sort");Object.entries(ZP.sortLabels).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o);});sel.value=ZP.defaultSort(S);
+  const L={ko:"한국어",en:"English",ja:"日本語","zh-CN":"中文"};const lab=k=>((S[k]||[]).includes("any")?["상관없음"]:[...(S[k]||[]),...(S.custom&&S.custom[k]?[S.custom[k]]:[])]);
+  const conds=[...lab("who"),S.when==="any"?"시간 상관없음":`${S.day==="tomorrow"?"내일":"오늘"} ${S.time} · ${S.remain==="today"?"종일":S.remain+"시간"}`,S.originLabel,...lab("what"),({walk:"도보",transit:"대중교통",car:"자동차",any:"가장 빠른 수단"})[S.mode||"walk"],...(S.langs||[]).filter(l=>l!=="ko"&&l!=="any").map(l=>L[l]),S.budget==="free"?"무료만":null,...lab("access"),...lab("why")].filter(Boolean);
+  $("cond").innerHTML=`<span class="chip lead">내 조건</span>`+conds.map(c=>`<span class="chip">${esc(c)}</span>`).join("")+`<a class="chip" href="index.html">수정</a>`;
+  const w=await ZP.weather(S.origin.lat,S.origin.lng);if(w)S.rainy=w.rainy;
+  let map=null; const isMobile=()=>matchMedia("(max-width:1000px)").matches;
+  if(isMobile()){$("mapbox").hidden=true;} $("maptoggle").onclick=()=>{const b=$("mapbox");b.hidden=!b.hidden;$("maptoggle").setAttribute("aria-expanded",String(!b.hidden));$("maptoggle").textContent=b.hidden?"지도 보기":"지도 닫기";if(!b.hidden&&map&&map.resize)setTimeout(()=>map.resize(),50);};
+  try{map=await ZP.map($("map"),S.origin,14,m=>{const e=$("maperr");e.hidden=false;e.textContent=m;});$("mapprov").textContent=map?(map.provider==="google"?"Google Maps":"OpenStreetMap"):"";}catch(e){}
+  function showError(e){$("results").setAttribute("aria-busy","false");$("cards").innerHTML="";$("cnt").textContent="결과를 불러오지 못했습니다";const box=$("err");box.hidden=false;
+    box.innerHTML=`<div class="errbox"><h3>비짓서울 데이터를 불러오지 못했습니다</h3><p>${esc(e.message)}${e.code==="NO_PROXY"?"<br>프록시(Cloudflare Worker)가 아직 배포되지 않았습니다. README의 절차로 배포한 뒤 config.js에 주소를 넣으세요.":""}</p><div class="row"><button class="btn btn-main" id="retry">다시 시도</button>${ZP.config.ALLOW_DEMO?`<button class="btn btn-ghost" id="demoOn">시연 데이터로 보기 (실시간 아님)</button>`:""}<a class="btn btn-ghost" href="diagnostics.html">진단 보기</a></div></div>`;
+    $("retry").onclick=()=>location.reload();const d=$("demoOn");if(d)d.onclick=()=>{ZP.enableDemo();location.reload();};}
+  $("demoOff").onclick=()=>{ZP.disableDemo();location.reload();};
   async function run(){
-    let R; try{ R=await ZP.run(S, sel.value); }catch(e){ $("err").hidden=false;$("err").innerHTML=`데이터를 불러오지 못했습니다: ${e.message} <button onclick="location.reload()">다시 시도</button>`;$("cards").innerHTML="";return; }
-    const {ctx,open,shut,byAxis,catOut,total,source}=R;
-    $("cnt").innerHTML=`갈 수 있는 곳 <b>${open.length}</b>곳 <span style="font-size:13px;color:var(--muted);font-weight:500">/ 후보 ${total}곳 · ${ctx.originLabel} 출발 · ${ZP.fmtDate(ctx.date)} ${ZP.fmtH(ctx.hour)}${w?` · 강수 ${w.rainy?"있음":"없음"}`:""}</span>`;
-    const ex=$("excl"); const axes=Object.entries(byAxis).sort((a,b)=>b[1]-a[1]);
-    if(shut.length||catOut){ex.hidden=false;ex.innerHTML=`<b>${shut.length+catOut}곳 제외</b> — `+axes.map(([a,n])=>`<span class="ax">${a} ${n}</span>`).join("")+(catOut?`<span class="ax">관심 분야 밖 ${catOut}</span>`:"");}else ex.hidden=true;
-    const gcls=["g","g2","g3","g4"];
-    const card=(x,shutFlag)=>{const p=x.p;const gate=p.hours.lastEntry??p.hours.close;const left=gate!=null&&gate!==24?gate-ctx.hour-x.tmin/60:null;
-      const pill=shutFlag?`<span class="pill shut">닫힘</span>`:x.needCheck?`<span class="pill chk">확인 필요</span>`:(left!=null&&left<=1.5?`<span class="pill soon">마감 ${Math.max(0,Math.round(left*60))}분 전</span>`:`<span class="pill">지금 가능</span>`);
-      const a=document.createElement("a");a.className="card"+(shutFlag?" shut":"");a.href=`place.html?id=${encodeURIComponent(p.id)}`;a.dataset.id=p.id;
-      a.innerHTML=`<div class="img ${gcls[p.id.charCodeAt(p.id.length-1)%4]}">${p.category}</div>
-        <div><h3><span class="n">${p.name}</span>${pill}${p.demo?'<span class="pill shut">예시</span>':''}</h3><div class="cat">${p.categoryTop} · ${p.category} · ${p.address}</div>
-        <div class="why">${(shutFlag?x.no.map(n=>n.t):x.why).map(t=>`<span>${t}</span>`).join("")}${!shutFlag?`<span>${p.fee.free?"무료":"유료 · "+p.fee.text}</span><span>${p.langs.join("·")}</span>${p.access.wheelchair?"<span>휠체어 출입</span>":""}`:""}</div></div>
-        <div class="side"><b>${x.tmin}분</b>${x.km.toFixed(1)}km${gate!=null&&gate!==24?`<br>${ZP.fmtH(gate)} 마감`:""}</div>`;
+    $("results").setAttribute("aria-busy","true");$("err").hidden=true;
+    let R;try{R=await ZP.run(S,sel.value,msg=>{$("cnt").textContent=msg+"…";});}catch(e){ZP.diag.lastError=e.message;showError(e);return;}
+    const {ctx,open,check,shut,byAxis,total,failed,source,demo,retrievedAt}=R; $("results").setAttribute("aria-busy","false"); $("demoBanner").hidden=!demo;
+    const excluded=shut.length;
+    $("cnt").innerHTML=`갈 수 있는 곳 <b>${open.length}</b>곳`;
+    $("meta").innerHTML=`${esc(ctx.originLabel)} 출발 · ${ZP.fmtDate(ctx.date)} ${ZP.fmtH(ctx.hour)} · 후보 ${total}곳 중 <b>${excluded}곳 제외</b>${check.length?` · 확인 필요 ${check.length}곳`:""}${failed?` · 조회 실패 ${failed}건`:""}${w?` · 강수 ${w.rainy?"있음":"없음"}`:""}<br><b>${esc(source)}</b> · 조회 ${retrievedAt.toLocaleTimeString("ko-KR")}${ZP.diag.cacheAt?` (프록시 캐시 ${new Date(ZP.diag.cacheAt).toLocaleTimeString("ko-KR")})`:""} — 원본 콘텐츠 갱신일은 각 상세에서 확인`;
+    const card=(x,kind)=>{const p=x.p;const gate=p.hours.lastEntry??p.hours.close;const left=gate!=null&&gate!==24&&x.tmin!=null?gate-ctx.hour-x.tmin/60:null;
+      const pill=kind==="shut"?`<span class="pill shut">제외</span>`:kind==="chk"?`<span class="pill chk">방문 전 확인</span>`:(left!=null&&left<=1.5?`<span class="pill soon">마감 ${Math.max(0,Math.round(left*60))}분 전</span>`:`<span class="pill">지금 가능</span>`);
+      const a=document.createElement("a");a.className="card"+(kind==="shut"?" shut":"");a.href=`place.html?id=${encodeURIComponent(p.id)}`;a.dataset.id=p.id;
+      const img=p.image?`<img src="${esc(p.image)}" alt="" loading="lazy" onerror="this.parentNode.textContent='이미지 없음'">`:`<span>이미지<br>정보 없음</span>`;
+      const facts=[p.fee.known?(p.fee.free?"무료":"유료"):"요금 확인 필요",p.langs.length?p.langs.join("·"):"언어 확인 필요",p.access.known?(p.access.wheelchair?"휠체어 출입":"접근 제한"):"접근성 확인 필요"];
+      a.innerHTML=`<div class="img" style="background:${p.image?'#EEE':'linear-gradient(135deg,#D7CCEB,#B9A6DA)'};color:#4E4762">${img}</div>
+        <div><h3><span class="n">${esc(p.name)}</span>${pill}</h3><div class="cat">${esc([p.categoryTop,p.category,p.address].filter(Boolean).join(" · "))}</div>
+        <div class="why">${(kind==="shut"?x.no.map(n=>n.t):[...x.why,...(kind==="chk"?x.chk:[])]).map(t=>`<span>${esc(t)}</span>`).join("")}${kind!=="shut"?facts.map(t=>`<span>${esc(t)}</span>`).join(""):""}</div></div>
+        <div class="side">${x.tmin!=null?`<b>${x.tmin}분 <small style="font-weight:500">추정</small></b>${x.km.toFixed(1)}km`:"<b>—</b>"}${gate!=null&&gate!==24?`<br>${ZP.fmtH(gate)} 마감`:""}</div>`;
       a.onmouseenter=()=>hl(p,true);a.onmouseleave=()=>hl(p,false);return a;};
-    const c=$("cards");c.innerHTML="";open.forEach(x=>c.appendChild(card(x,false)));
-    const s=$("shut");s.innerHTML="";shut.forEach(x=>s.appendChild(card(x,true)));$("shutwrap").hidden=!shut.length;
-    const e=$("empty");
-    if(!open.length){const tips=[];const relax=(k,v,l)=>{const s2={...S,[k]:v};ZP.run(s2,sel.value).then(r=>{if(r.open.length){tips.push(`‘${l}’ 조건을 풀면 ${r.open.length}곳`);$("tips").innerHTML=tips.map(t=>`<li>${t}</li>`).join("");}});};
-      if(S.budget==="free")relax("budget","any","무료만");if((S.what||[]).length)relax("what",[],"관심 분야");if((S.access||[]).length||(S.who||[]).some(w=>/휠체어|유모차/.test(w)))relax("access",[],"접근성");
-      $("tips").innerHTML="<li>다른 시간대나 출발지를 골라보세요</li>";e.hidden=false;}else e.hidden=true;
-    $("src").textContent=`데이터 출처: ${source}${source==="시연 데이터"?" — 실제 API 연결 전. 좌표·주소는 실제, 운영정보는 공개 안내 기준 표본.":""} · 이동시간은 거리 기반 추정치(Google Routes 키 설정 시 실제 값).`;
-    // 지도
-    if(map){ map.markers.forEach(m=>{ try{ m.mk.remove?m.mk.remove():m.mk.setMap(null);}catch(_){} }); map.markers=[]; byId={};
-      map.add(S.origin,{color:"#7437B0",me:true,label:ctx.originLabel});
-      open.forEach((x,i)=>{byId[x.p.id]=map.add(x.p,{color:"#0F9D58",num:i+1,label:`${i+1}. ${x.p.name}`,onClick:()=>location.href=`place.html?id=${x.p.id}`});});
-      shut.forEach(x=>{byId[x.p.id]=map.add(x.p,{color:"#B0B8C1",label:x.p.name+" (닫힘)"});});
-      map.fit(); }
+    const c=$("cards");c.innerHTML="";open.forEach(x=>c.appendChild(card(x,"open")));
+    const ex=$("excl");if(excluded){ex.hidden=false;$("exclsum").textContent=`제외된 장소 ${excluded}곳 · 이유 보기`;$("exclax").innerHTML=Object.entries(byAxis).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`<span class="ax">${esc(a)} ${n}</span>`).join("");const s=$("shut");s.innerHTML="";shut.forEach(x=>s.appendChild(card(x,"shut")));}else ex.hidden=true;
+    const ck=$("chk");if(check.length){ck.hidden=false;$("chksum").textContent=`방문 전 확인이 필요한 곳 ${check.length}곳`;const cc=$("chkcards");cc.innerHTML="";check.forEach(x=>cc.appendChild(card(x,"chk")));}else ck.hidden=true;
+    const e=$("empty");if(!open.length){e.hidden=false;$("tips").innerHTML="<li>계산 중…</li>";const tips=[];const tryRelax=async(k,v,l)=>{const r=await ZP.run({...S,[k]:v},sel.value);if(r.open.length)tips.push(`‘${l}’ 조건을 풀면 ${r.open.length}곳이 추가됩니다`);};
+      if(S.budget==="free")await tryRelax("budget","any","무료만");if((S.what||[]).length&&!(S.what||[]).includes("any"))await tryRelax("what",[],"관심 분야");if((S.access||[]).length||(S.who||[]).some(x=>/휠체어|유모차/.test(x)))await tryRelax("access",[],"접근성");if(S.mode!=="any")await tryRelax("mode","any","이동수단");
+      $("tips").innerHTML=(tips.length?tips:["다른 시간대나 출발지를 골라보세요"]).map(t=>`<li>${esc(t)}</li>`).join("");}else e.hidden=true;
+    $("src").textContent=demo?"시연 데이터: 좌표·주소는 실제, 운영정보는 공개 안내 기준 표본. 비짓서울 API 실시간 값이 아닙니다.":`데이터 출처: 비짓서울 API (프록시 경유). 이동시간은 거리 기반 추정치입니다.`;
+    if(map){map.clear();map.add(S.origin,{color:"#7437B0",me:true,label:ctx.originLabel});open.forEach((x,i)=>map.add(x.p,{color:"#0F9D58",num:i+1,label:`${i+1}. ${x.p.name}`,onClick:()=>location.href=`place.html?id=${encodeURIComponent(x.p.id)}`}));map.fit();}
   }
-  function hl(p,on){document.querySelectorAll(`[data-id="${p.id}"]`).forEach(el=>el.classList.toggle("hl",on));if(map)map.focus(p,on);}
-  sel.onchange=run; await run();
+  function hl(p,on){document.querySelectorAll(`[data-id="${CSS.escape(p.id)}"]`).forEach(el=>el.classList.toggle("hl",on));if(map)map.focus(p,on);}
+  sel.onchange=run;await run();
 })();
 </script>
 </body>
