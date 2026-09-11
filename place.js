@@ -1,0 +1,36 @@
+(async function(){
+  const $=id=>document.getElementById(id),U=ZPUI,esc=U.esc,S=ZP.loadState(),id=new URLSearchParams(location.search).get('id');
+  const safeURL=value=>{try{let s=String(value||'').trim();if(s&&!/^[a-z][a-z\d+.-]*:/i.test(s)&&/^[\w.-]+\.[a-z]{2,}(?:[/:?#]|$)/i.test(s))s='https://'+s;const u=new URL(s);return ['https:','http:'].includes(u.protocol)?u.href:null;}catch(_){return null;}};
+  const raw=value=>`<div class="raw">${esc(value||'정보 없음')}</div>`;
+  const box=(title,body,wide=false)=>`<section class="box${wide?' wide':''}"><h3>${title}</h3>${body}</section>`;
+  if(!S?.origin){$('main').innerHTML='<div class="notice" style="margin:30px 0">출발 조건을 먼저 골라 주세요. <a class="btn btn-ghost" href="index.html">조건 고르기</a></div>';return;}
+  if(!id){$('main').textContent='장소가 지정되지 않았습니다. 목록에서 장소를 선택해 주세요.';return;}
+  const preview=window.ZPDescriptions?.snapshot(id);if(preview){$('main').innerHTML=`<p role="status">현재 운영정보를 조회하고 있습니다. 먼저 조사한 사진과 소개를 확인하세요.</p><div class="hero"><div class="img">${preview.image?`<img src="${esc(preview.image)}" alt="${esc(preview.name)} 사진">`:''}</div><div><h1>${esc(preview.name)}</h1>${U.explanation(preview)}<p>조사 자료 · 현재 방문 가능 여부 확인 중</p></div></div>`;U.imageFallback($('main').querySelector('img'),preview);}
+  let p,loadError=null;try{p=await ZP.getPlace(id);}catch(e){p=preview;if(p)loadError=e.message;else{$('main').innerHTML=`<div class="notice" style="margin:30px 0"><strong>상세 정보를 불러오지 못했습니다.</strong><span>${esc(e.message)}</span><button class="btn btn-main" id="retry">다시 시도</button><a class="btn btn-ghost" href="search.html">목록으로</a></div>`;$('retry').onclick=()=>location.reload();return;}}
+  const ctx=ZP.context(S),J=p.snapshot?window.ZPDescriptions.unverified(p,S):ZP.judge(p,ctx),url=safeURL(p.url),mode=J.usedMode||ctx.mode,kind=J.hardStatus==='fail'?'no':J.hardStatus==='unknown'?'chk':'';
+  const reasons=J.hardStatus==='fail'?J.no.map(n=>n.t):[...J.why,...J.chk];const unique=[...new Set(reasons)];
+  const directions=new URL(ZP.directionsUrl(p,mode));directions.searchParams.set('origin',`${S.origin.lat},${S.origin.lng}`);
+  document.title=p.name+' — ZERO PROBLEMS';
+  $('main').innerHTML=`${p.snapshot?`<p class="notice">현재 상세 조회에 실패해 ${esc(String(p.retrievedAt).slice(0,10))} 조사 자료를 표시합니다. 현재 방문 가능 추천이 아닙니다. <button class="btn btn-ghost" id="refreshDetail">운영정보 다시 확인</button></p>`:''}${ZP.isDemo()?'<p class="notice">시연 예시입니다. 실제 방문 전에는 운영기관 안내를 확인하세요.</p>':''}
+    <div class="hero"><div class="img">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)} 대표 이미지">`:'대표 이미지 없음'}</div><div><h1>${esc(p.name)}</h1><p class="cat">${esc([p.category,p.address].filter(Boolean).join(' · '))}</p>
+    ${U.explanation(p)}<p>${ZP.fmtDate(ctx.date)} ${ZP.fmtH(ctx.hour)} · ${esc(ctx.originLabel)} 출발 기준</p><div class="verdict ${kind}"><strong>${U.stateText(J)}</strong><ul>${unique.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div><p class="score">${esc(U.scoreText(J))}</p>
+    <div class="acts">${Number.isFinite(p.lat)&&Number.isFinite(p.lng)?`<a class="btn btn-main" target="_blank" rel="noopener" href="${esc(directions.href)}">${esc(U.modeNames[mode]||'이동')} 길찾기</a>`:''}${url?`<a class="btn btn-ghost" target="_blank" rel="noopener" href="${esc(url)}">공식 사이트</a>`:''}${p.tel?`<a class="btn btn-ghost" href="tel:${esc(String(p.tel).replace(/[^\d+\-]/g,''))}">${esc(p.tel)}</a>`:''}</div></div></div>
+    <div class="photo-strip">${(p.images||[]).slice(1,5).map((src,i)=>`<img src="${esc(src)}" alt="${esc(p.name)} 추가 사진 ${i+1}" loading="lazy" decoding="async">`).join('')}</div><div class="grid">
+    ${box('운영시간',`<div class="v">${p.hours.confidence==='high'&&p.hours.open!=null?(p.hours.open===0&&p.hours.close===24?'안내상 24시간 개방':`${ZP.fmtH(p.hours.open)}–${p.hours.close===24?'24:00':ZP.fmtH(p.hours.close)}${p.hours.overnight?' (다음 날 종료)':''}${p.hours.lastEntry!=null?' · 입장 마감 '+ZP.fmtH(p.hours.lastEntry):''}`):'운영시간 확인 필요'}</div>${raw('원문: '+(p.raw.cmmn_use_time||'정보 없음'))}`)}
+    ${box('휴무일',`<div class="v">${J.axes.closure.status==='unknown'?'휴무일 확인 필요':esc(J.axes.closure.reasons.join(' · '))}</div>${raw('원문: '+(p.raw.closed_days||'정보 없음'))}`)}
+    ${box('운영 기간',`<div class="v">${p.period.start||p.period.end?`${esc(p.period.start||'시작일 미확인')} ~ ${esc(p.period.end||'종료일 미확인')}`:'별도 행사 기간 정보 없음'}</div>`)}
+    ${box('이동시간',`<div class="v">${Number.isFinite(J.tmin)?`${esc(U.modeNames[mode])} 약 ${J.tmin}분 · ${J.km.toFixed(1)}km`:'확인 필요'}</div>${raw('거리 기반 추정입니다. 실제 경로·환승·계단·교통 상황은 길찾기에서 확인하세요.')}`)}
+    ${box('요금 · 예약',`<div class="v">${p.fee.known?(p.fee.free?'무료 안내':'유료 안내'):'요금 미확인'}${p.fee.text?' · '+esc(p.fee.text):''}</div>${raw(p.reservation?'예약 적용 대상과 완료 여부 확인 필요':p.reservationNotice?'예약 안내가 있습니다. 적용 대상은 운영기관 안내를 확인하세요.':'필수 예약 안내가 확인되지 않음')}`)}
+    ${box('웹사이트 제공 언어',`<div class="v">${p.langs.length?esc(p.langs.join(' · ')):'정보 없음'}</div>${raw('현장 직원·안내판·오디오 가이드의 지원 언어와 다릅니다.')}`)}
+    ${box('접근성 시설 정보',`<div class="v">${p.access.list.length?esc(p.access.list.join(' · ')):'시설 정보 없음'}</div>${raw('시설 존재만으로 출입구부터 목적지까지의 무장애 이동을 보장하지 않습니다.')}`)}
+    ${box('방문 조건별 판정',`<ul class="fit">${Object.entries(J.axes).map(([axis,a])=>`<li><strong>${U.axisNames[axis]||esc(axis)} · ${U.statuses[a.status]}</strong><div>${a.reasons.map(esc).join(' · ')}</div></li>`).join('')}</ul>`,true)}
+    ${box('선호 적합도',`<p>${esc(U.scoreText(J))}</p>${J.score.reasons.length?`<ul class="fit">${J.score.reasons.map(r=>`<li>${esc(r.text)}${r.weight?' · 비중 '+Math.round(r.weight)+'점':''}</li>`).join('')}</ul>`:'선택한 소프트 선호 조건이 없습니다.'}`,true)}
+    ${J.axes.regulation.status!=='na'&&/북촌/.test(p.name)?box('방문 규제 출처','<a href="https://news.seoul.go.kr/culture/archives/526017?listPage=3" target="_blank" rel="noopener">서울시 북촌 특별관리지역 안내</a><p>정책 확인일: 2026년 9월 11일. 북촌 전체에 동일한 제한이 적용되는 것은 아닙니다.</p>',true):''}
+    ${p.visitRestriction?box('공식 방문 제한 안내',raw(p.visitRestriction),true):''}
+    ${p.notice?box('운영기관 참고 안내',`<p>${esc(p.notice)}</p>`,true):''}
+    ${box('출처와 확인 시각',raw(`콘텐츠 ID: ${p.id}\n출처: ${p.snapshot?'비짓서울 API 조사 자료 · 현재 운영 미확인':ZP.isDemo()?'시연 데이터':'비짓서울 API'}\n정보 조회: ${new Date(p.retrievedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})}\n원본 갱신일: ${p.sourceUpdatedAt||'정보 없음'}\n운영시간 해석: ${{high:'단일 규칙 확인',medium:'예외 확인 필요',low:'해석 확인 필요',none:'정보 없음'}[p.hours.confidence]}\n휴무일 해석: ${{high:'안내 규칙 확인',medium:'예외 확인 필요',low:'해석 확인 필요',none:'정보 없음'}[p.closed.confidence]}`),true)}
+    ${box('위치',`<div class="mapbox"><div class="m" id="map" aria-label="장소 위치 지도"></div></div><p id="maperr" class="notice" hidden></p>`,true)}</div>`;
+  U.imageFallback($('main').querySelector('.hero img'),p);$('main').querySelectorAll('.photo-strip img').forEach(img=>img.onerror=()=>img.hidden=true);if($('refreshDetail'))$('refreshDetail').onclick=()=>location.reload();
+  U.rememberDiag();
+  if(Number.isFinite(p.lat)&&Number.isFinite(p.lng)){try{const m=await ZP.map($('map'),p,15,message=>{$('maperr').hidden=false;$('maperr').textContent=message;});if(m){m.add(p,{label:p.name,num:1,dim:J.hardStatus!=='pass'});m.add(S.origin,{me:true,label:ctx.originLabel});m.fit();}}catch(_){$('maperr').hidden=false;$('maperr').textContent='지도를 불러오지 못했습니다. 위의 길찾기를 이용해 주세요.';}}else $('map').textContent='좌표 정보가 없어 지도를 표시할 수 없습니다.';
+})();

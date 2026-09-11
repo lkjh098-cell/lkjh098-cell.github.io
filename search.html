@@ -1,105 +1,20 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>지금 갈 수 있는 곳 — ZERO PROBLEMS</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="shared.css">
-<style>
-.head{background:#fff;border-bottom:1px solid var(--line)}.head .wrap{padding:16px 24px 14px}
-.head h1{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.025em}
-.cond{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.cond .chip.lead{background:var(--soft);border-color:transparent;color:var(--c5)}
-.layout{display:grid;grid-template-columns:1fr 400px;gap:20px;padding:16px 0 40px;align-items:start}
-@media(max-width:1000px){.layout{grid-template-columns:1fr}.mapcol{position:static}.mapbox .m{height:260px}.mapbox[hidden]{display:none}}
-.res-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
-.res-head h2{margin:0;font-size:17px;font-weight:800}.res-head h2 b{color:var(--c5)}
-.sort select{font-size:13.5px;font-weight:600;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;min-height:40px}
-.meta{font-size:12.5px;color:var(--muted);margin:0 0 10px}.meta b{color:var(--ink)}
-.cards{display:flex;flex-direction:column;gap:10px}
-.card .img img{width:100%;height:100%;object-fit:cover;display:block}
-.sk{background:#fff;border:1px solid var(--line);border-radius:18px;height:124px;position:relative;overflow:hidden}.sk:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);animation:sh 1.2s infinite}@keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-@media(prefers-reduced-motion:reduce){.sk:after{animation:none}}
-details.excl{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px}details.excl summary{cursor:pointer;font-weight:700;font-size:14px;list-style:none;display:flex;justify-content:space-between}details.excl summary:after{content:"열기"}details.excl[open] summary:after{content:"닫기"}
-details.excl .ax{display:inline-block;margin:6px 6px 0 0;padding:2px 8px;border-radius:8px;background:var(--shutbg);color:var(--shut);font-weight:600;font-size:12.5px}
-.empty{background:linear-gradient(135deg,var(--soft),#EAF1FF);border-radius:16px;padding:16px 18px}.empty h3{margin:0 0 6px;font-size:16px}.empty ul{margin:0;padding-left:1.1em;color:var(--ink2);font-size:14px}
-.errbox{background:#fff;border:1px solid #F0D9B5;border-radius:16px;padding:18px 20px}.errbox h3{margin:0 0 6px;font-size:17px;color:var(--warn)}.errbox p{margin:0 0 12px;color:var(--ink2);font-size:14px}
-.errbox .row{display:flex;gap:8px;flex-wrap:wrap}
-.demo-banner{background:#FFF4E5;color:var(--warn);border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.mapcol{position:sticky;top:76px}.mapbox .m{height:520px}.maptoggle{display:none;margin-bottom:10px}@media(max-width:1000px){.maptoggle{display:inline-flex}}
-.src{margin-top:12px;font-size:12.5px;color:var(--muted)}
-</style>
-</head>
-<body>
-<header class="top"><div class="wrap"><a href="index.html" style="display:flex;align-items:center"><img src="logo-black.png" alt="ZERO PROBLEMS 로고"><span class="sub">닫힌 문제로</span></a><a class="btn btn-ghost" href="index.html">조건 다시 고르기</a></div></header>
-<div class="head"><div class="wrap"><h1>지금 갈 수 있는 곳</h1><div class="cond" id="cond"></div></div></div>
-<main class="wrap layout">
-  <section aria-live="polite" aria-busy="true" id="results">
-    <div id="demoBanner" class="demo-banner" hidden><span>시연 데이터 모드 — 비짓서울 API 실시간 값이 아닙니다.</span><button class="chip" id="demoOff">실시간으로 전환</button></div>
-    <div class="res-head"><h2 id="cnt">불러오는 중…</h2><div class="sort"><label for="sort">정렬</label> <select id="sort"></select></div></div>
-    <p class="meta" id="meta"></p>
-    <button class="btn btn-ghost maptoggle" id="maptoggle" aria-expanded="false" aria-controls="mapbox">지도 보기</button>
-    <div id="err" hidden></div>
-    <div class="cards" id="cards"><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>
-    <div class="empty" id="empty" hidden><h3>지금 조건에 맞는 곳이 없습니다</h3><ul id="tips"></ul></div>
-    <details class="excl" id="excl" hidden><summary><span id="exclsum"></span></summary><div id="exclax"></div><div class="cards" id="shut" style="margin-top:10px"></div></details>
-    <details class="excl" id="chk" hidden><summary><span id="chksum"></span></summary><div class="cards" id="chkcards" style="margin-top:10px"></div></details>
-    <p class="src" id="src"></p>
-  </section>
-  <aside class="mapcol"><div class="mapbox" id="mapbox"><div class="m" id="map"></div><div class="legend"><span><i style="background:var(--ok)"></i>갈 수 있음</span><span><i style="background:var(--c5)"></i>내 위치</span><span id="mapprov"></span></div></div><div id="maperr" class="notice" style="margin-top:10px" hidden></div></aside>
-</main>
-<footer><div class="wrap"><p>공모전 출품작 프로젝트. 서울관광재단과 공식적인 관련이 없습니다. 이동시간은 추정치이며, 정보가 없는 항목은 “정보 확인 필요”로 표시합니다. 선택 조건은 이 브라우저 세션에만 저장됩니다. <a href="diagnostics.html">진단</a></p></div></footer>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="config.js"></script>
-<script src="data.js"></script>
-<script>
-(async function(){
-  const $=id=>document.getElementById(id); const esc=ZP.esc;
-  const S=ZP.loadState(); if(!S||!S.origin){location.replace("index.html");return;}
-  const sel=$("sort");Object.entries(ZP.sortLabels).forEach(([k,v])=>{const o=document.createElement("option");o.value=k;o.textContent=v;sel.appendChild(o);});sel.value=ZP.defaultSort(S);
-  const L={ko:"한국어",en:"English",ja:"日本語","zh-CN":"中文"};const lab=k=>((S[k]||[]).includes("any")?["상관없음"]:[...(S[k]||[]),...(S.custom&&S.custom[k]?[S.custom[k]]:[])]);
-  const conds=[...lab("who"),S.when==="any"?"시간 상관없음":`${S.day==="tomorrow"?"내일":"오늘"} ${S.time} · ${S.remain==="today"?"종일":S.remain+"시간"}`,S.originLabel,...lab("what"),({walk:"도보",transit:"대중교통",car:"자동차",any:"가장 빠른 수단"})[S.mode||"walk"],...(S.langs||[]).filter(l=>l!=="ko"&&l!=="any").map(l=>L[l]),S.budget==="free"?"무료만":null,...lab("access"),...lab("why")].filter(Boolean);
-  $("cond").innerHTML=`<span class="chip lead">내 조건</span>`+conds.map(c=>`<span class="chip">${esc(c)}</span>`).join("")+`<a class="chip" href="index.html">수정</a>`;
-  const w=await ZP.weather(S.origin.lat,S.origin.lng);if(w)S.rainy=w.rainy;
-  let map=null; const isMobile=()=>matchMedia("(max-width:1000px)").matches;
-  if(isMobile()){$("mapbox").hidden=true;} $("maptoggle").onclick=()=>{const b=$("mapbox");b.hidden=!b.hidden;$("maptoggle").setAttribute("aria-expanded",String(!b.hidden));$("maptoggle").textContent=b.hidden?"지도 보기":"지도 닫기";if(!b.hidden&&map&&map.resize)setTimeout(()=>map.resize(),50);};
-  try{map=await ZP.map($("map"),S.origin,14,m=>{const e=$("maperr");e.hidden=false;e.textContent=m;});$("mapprov").textContent=map?(map.provider==="google"?"Google Maps":"OpenStreetMap"):"";}catch(e){}
-  function showError(e){$("results").setAttribute("aria-busy","false");$("cards").innerHTML="";$("cnt").textContent="결과를 불러오지 못했습니다";const box=$("err");box.hidden=false;
-    box.innerHTML=`<div class="errbox"><h3>비짓서울 데이터를 불러오지 못했습니다</h3><p>${esc(e.message)}${e.code==="NO_PROXY"?"<br>프록시(Cloudflare Worker)가 아직 배포되지 않았습니다. README의 절차로 배포한 뒤 config.js에 주소를 넣으세요.":""}</p><div class="row"><button class="btn btn-main" id="retry">다시 시도</button>${ZP.config.ALLOW_DEMO?`<button class="btn btn-ghost" id="demoOn">시연 데이터로 보기 (실시간 아님)</button>`:""}<a class="btn btn-ghost" href="diagnostics.html">진단 보기</a></div></div>`;
-    $("retry").onclick=()=>location.reload();const d=$("demoOn");if(d)d.onclick=()=>{ZP.enableDemo();location.reload();};}
-  $("demoOff").onclick=()=>{ZP.disableDemo();location.reload();};
-  async function run(){
-    $("results").setAttribute("aria-busy","true");$("err").hidden=true;
-    let R;try{R=await ZP.run(S,sel.value,msg=>{$("cnt").textContent=msg+"…";});}catch(e){ZP.diag.lastError=e.message;showError(e);return;}
-    const {ctx,open,check,shut,byAxis,total,failed,source,demo,retrievedAt}=R; $("results").setAttribute("aria-busy","false"); $("demoBanner").hidden=!demo;
-    const excluded=shut.length;
-    $("cnt").innerHTML=`갈 수 있는 곳 <b>${open.length}</b>곳`;
-    $("meta").innerHTML=`${esc(ctx.originLabel)} 출발 · ${ZP.fmtDate(ctx.date)} ${ZP.fmtH(ctx.hour)} · 후보 ${total}곳 중 <b>${excluded}곳 제외</b>${check.length?` · 확인 필요 ${check.length}곳`:""}${failed?` · 조회 실패 ${failed}건`:""}${w?` · 강수 ${w.rainy?"있음":"없음"}`:""}<br><b>${esc(source)}</b> · 조회 ${retrievedAt.toLocaleTimeString("ko-KR")}${ZP.diag.cacheAt?` (프록시 캐시 ${new Date(ZP.diag.cacheAt).toLocaleTimeString("ko-KR")})`:""} — 원본 콘텐츠 갱신일은 각 상세에서 확인`;
-    const card=(x,kind)=>{const p=x.p;const gate=p.hours.lastEntry??p.hours.close;const left=gate!=null&&gate!==24&&x.tmin!=null?gate-ctx.hour-x.tmin/60:null;
-      const pill=kind==="shut"?`<span class="pill shut">제외</span>`:kind==="chk"?`<span class="pill chk">방문 전 확인</span>`:(left!=null&&left<=1.5?`<span class="pill soon">마감 ${Math.max(0,Math.round(left*60))}분 전</span>`:`<span class="pill">지금 가능</span>`);
-      const a=document.createElement("a");a.className="card"+(kind==="shut"?" shut":"");a.href=`place.html?id=${encodeURIComponent(p.id)}`;a.dataset.id=p.id;
-      const img=p.image?`<img src="${esc(p.image)}" alt="" loading="lazy" onerror="this.parentNode.textContent='이미지 없음'">`:`<span>이미지<br>정보 없음</span>`;
-      const facts=[p.fee.known?(p.fee.free?"무료":"유료"):"요금 확인 필요",p.langs.length?p.langs.join("·"):"언어 확인 필요",p.access.known?(p.access.wheelchair?"휠체어 출입":"접근 제한"):"접근성 확인 필요"];
-      a.innerHTML=`<div class="img" style="background:${p.image?'#EEE':'linear-gradient(135deg,#D7CCEB,#B9A6DA)'};color:#4E4762">${img}</div>
-        <div><h3><span class="n">${esc(p.name)}</span>${pill}</h3><div class="cat">${esc([p.categoryTop,p.category,p.address].filter(Boolean).join(" · "))}</div>
-        <div class="why">${(kind==="shut"?x.no.map(n=>n.t):[...x.why,...(kind==="chk"?x.chk:[])]).map(t=>`<span>${esc(t)}</span>`).join("")}${kind!=="shut"?facts.map(t=>`<span>${esc(t)}</span>`).join(""):""}</div></div>
-        <div class="side">${x.tmin!=null?`<b>${x.tmin}분 <small style="font-weight:500">추정</small></b>${x.km.toFixed(1)}km`:"<b>—</b>"}${gate!=null&&gate!==24?`<br>${ZP.fmtH(gate)} 마감`:""}</div>`;
-      a.onmouseenter=()=>hl(p,true);a.onmouseleave=()=>hl(p,false);return a;};
-    const c=$("cards");c.innerHTML="";open.forEach(x=>c.appendChild(card(x,"open")));
-    const ex=$("excl");if(excluded){ex.hidden=false;$("exclsum").textContent=`제외된 장소 ${excluded}곳 · 이유 보기`;$("exclax").innerHTML=Object.entries(byAxis).sort((a,b)=>b[1]-a[1]).map(([a,n])=>`<span class="ax">${esc(a)} ${n}</span>`).join("");const s=$("shut");s.innerHTML="";shut.forEach(x=>s.appendChild(card(x,"shut")));}else ex.hidden=true;
-    const ck=$("chk");if(check.length){ck.hidden=false;$("chksum").textContent=`방문 전 확인이 필요한 곳 ${check.length}곳`;const cc=$("chkcards");cc.innerHTML="";check.forEach(x=>cc.appendChild(card(x,"chk")));}else ck.hidden=true;
-    const e=$("empty");if(!open.length){e.hidden=false;$("tips").innerHTML="<li>계산 중…</li>";const tips=[];const tryRelax=async(k,v,l)=>{const r=await ZP.run({...S,[k]:v},sel.value);if(r.open.length)tips.push(`‘${l}’ 조건을 풀면 ${r.open.length}곳이 추가됩니다`);};
-      if(S.budget==="free")await tryRelax("budget","any","무료만");if((S.what||[]).length&&!(S.what||[]).includes("any"))await tryRelax("what",[],"관심 분야");if((S.access||[]).length||(S.who||[]).some(x=>/휠체어|유모차/.test(x)))await tryRelax("access",[],"접근성");if(S.mode!=="any")await tryRelax("mode","any","이동수단");
-      $("tips").innerHTML=(tips.length?tips:["다른 시간대나 출발지를 골라보세요"]).map(t=>`<li>${esc(t)}</li>`).join("");}else e.hidden=true;
-    $("src").textContent=demo?"시연 데이터: 좌표·주소는 실제, 운영정보는 공개 안내 기준 표본. 비짓서울 API 실시간 값이 아닙니다.":`데이터 출처: 비짓서울 API (프록시 경유). 이동시간은 거리 기반 추정치입니다.`;
-    if(map){map.clear();map.add(S.origin,{me:true,label:ctx.originLabel});
-      open.forEach((x,i)=>{const p=x.p;const pop=`<div class="pop">${p.image?`<img src="${esc(p.image)}" alt="">`:""}<b>${esc(p.name)}</b><span>${esc([p.category,p.address].filter(Boolean).join(" · "))}</span><span>${x.tmin}분(추정) · ${p.fee.known?(p.fee.free?"무료":"유료"):"요금 확인 필요"}</span><a href="place.html?id=${encodeURIComponent(p.id)}">상세 보기 →</a></div>`;
-        map.add(p,{num:i+1,label:`${i+1}. ${p.name}`,popup:pop});});
-      map.fit();}
-  }
-  function hl(p,on){document.querySelectorAll(`[data-id="${CSS.escape(p.id)}"]`).forEach(el=>el.classList.toggle("hl",on));if(map)map.focus(p,on);}
-  sel.onchange=run;await run();
-})();
-</script>
-</body>
-</html>
+<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>선택한 시간에 방문할 곳 — ZERO PROBLEMS</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="shared.css"><link rel="stylesheet" href="results.css"></head><body>
+<header class="top"><div class="wrap"><a href="index.html" class="brand"><img src="logo-black.png" alt="ZERO PROBLEMS 로고"><span class="sub">닫힌 문제로</span></a><a class="btn btn-ghost" href="index.html">조건 수정</a></div></header>
+<div class="head"><div class="wrap"><h1>선택한 시간에 방문할 곳</h1><div class="cond" id="cond"></div></div></div>
+<main class="wrap layout"><div id="demoBanner" class="demo-banner" hidden>시연 예시입니다. 실제 운영 여부를 보장하는 실시간 정보가 아닙니다. <button class="chip" id="demoOff">실제 데이터로 전환</button></div>
+<div class="res-head"><h2 id="cnt">방문 조건을 확인하고 있습니다</h2><div class="sort"><label for="sort">정렬</label><select id="sort"></select></div></div>
+<p class="meta" id="meta"></p><p id="status" class="busy" role="status" aria-live="polite"></p>
+<div class="controls"><div class="filters" aria-label="선호 조건 기준"><button class="chip" data-filter="70" aria-pressed="true">기본 추천 · 70점 이상</button><button class="chip" data-filter="complete" aria-pressed="false">완전 충족만</button><button class="chip" data-filter="50" aria-pressed="false">대안 더 보기 · 50점 이상</button></div><button class="btn btn-ghost maptoggle" id="maptoggle" aria-expanded="false" aria-controls="mapbox">지도 보기</button></div>
+<a class="catalog-jump btn btn-ghost" href="#catalogSection" id="catalogJump">조사한 장소 · 사진과 AI 설명 보기 ↓</a><p class="section-note" id="scopeNotice" hidden></p><div id="err" hidden></div><div id="partialFailure" class="notice" hidden></div>
+<div class="columns"><section id="results" aria-busy="true"><div id="loading"><div class="sk"></div><div class="sk"></div></div>
+<section id="completeSection" hidden><h3 class="section-head" id="completeTitle"></h3><div class="cards" id="cards"></div></section>
+<section id="partialSection" hidden><h3 class="section-head" id="partialTitle"></h3><p class="section-note">방문 조건은 확인됐지만 선호와 다른 점이 있습니다.</p><div class="cards" id="partialcards"></div></section>
+<div class="empty" id="empty" hidden></div>
+<section id="checkSection" hidden><h3 class="section-head" id="checkTitle"></h3><p class="section-note">운영·입장 조건을 확인한 뒤 출발하세요. 확정 추천 수에는 포함하지 않습니다.</p><div class="cards" id="checkcards"></div></section>
+<details class="excl" id="belowSection" hidden><summary id="belowTitle"></summary><p class="section-note">방문 조건은 확인됐지만 현재 선호 점수 기준보다 낮습니다. 방문 불가로 제외된 장소와는 다릅니다.</p><div class="cards" id="belowcards"></div></details>
+<details class="excl" id="excl" hidden><summary id="exclsum"></summary><p class="section-note" id="exclax"></p><div class="cards" id="shut"></div></details>
+<div class="loadmore"><button class="btn btn-ghost" id="more" hidden>후보 더 확인하기</button></div><p class="meta" id="src"></p></section>
+<aside class="mapcol"><div class="mapbox" id="mapbox"><div class="m" id="map" aria-label="추천 장소 지도"></div><div class="legend"><span>번호는 추천 카드와 같습니다</span><span id="mapprov"></span></div><p class="map-hint">확정 추천 장소만 지도에 표시합니다.</p></div><p id="maperr" class="notice" hidden></p><button id="mapretry" class="btn btn-ghost" hidden>Google 지도 다시 불러오기</button></aside></div><section id="catalogSection" class="catalog-section"><h2 id="catalogTitle">공식 자료로 조사한 장소</h2><p class="section-note" id="catalogNote">사진과 키워드별 AI 설명을 확인하세요. 현재 방문 가능 여부는 위의 추천 결과에서 따로 확인합니다.</p><div id="catalogCards" class="catalog-grid"></div></section></main>
+<footer><div class="wrap"><p>이동시간은 거리 기반 추정입니다. 현장 안내와 운영기관 공지를 우선 확인하세요. 선택 조건은 이 브라우저 세션에 저장됩니다. 공모전 출품작이며 서울관광재단과 공식적인 관련이 없습니다. <a href="diagnostics.html">연동 진단</a></p></div></footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="config.js"></script><script src="data.js"></script><script src="regulations.js"></script><script src="catalog.js"></script><script src="explanations.js"></script><script src="ui.js"></script><script src="search.js"></script><script src="gallery.js"></script></body></html>

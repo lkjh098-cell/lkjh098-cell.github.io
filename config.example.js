@@ -1,7 +1,15 @@
-// config.js 로 복사한 뒤 값을 채우세요. config.js 는 .gitignore 에 넣어 커밋하지 않습니다.
-// 정적 사이트 특성상 Google Maps 키는 브라우저에 노출됩니다 → Google Cloud 콘솔에서 "HTTP 리퍼러: https://lkjh098-cell.github.io/*" 로 반드시 제한하세요.
+// 공개 설정. 비짓서울 API 키는 Worker의 VISITSEOUL_API_KEY Secret에만 저장합니다.
+// config.js로 복사합니다. Google 지도 키는 공개 키이며 웹사이트 리퍼러 제한이 필요합니다.
 window.ZP_CONFIG = {
-  GOOGLE_MAPS_KEY: "",            // 비우면 OpenStreetMap(Leaflet)으로 실제 지도를 표시
-  VISITSEOUL_PROXY_URL: "",       // 예: https://zp-proxy.<계정>.workers.dev  (키는 프록시가 보유, README 참고)
-  DATA_SOURCE: "mock"             // "mock" | "visitseoul"  — 프록시 준비 후 "visitseoul" 로 전환
+  DATA_SOURCE: "visitseoul",
+  VISITSEOUL_PROXY_URL: "https://zp-proxy.example.workers.dev",
+  GOOGLE_MAPS_KEY: "", // 빈 값이면 오픈스트리트맵 사용
+  ALLOW_DEMO: true, // 사용자가 직접 선택한 시연 예시만 허용
+  MAX_PAGES: 4,
+  MIN_PLACES: 50,
+  CONCURRENCY: 3,
+  REQUEST_TIMEOUT_MS: 15000,
+  CACHE_TTL_MS: 300000,
+  MAP_TIMEOUT_MS: 10000,
+  GEOCODE_TIMEOUT_MS: 8000
 };
