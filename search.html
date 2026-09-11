@@ -26,7 +26,7 @@ details.excl .ax{display:inline-block;margin:6px 6px 0 0;padding:2px 8px;border-
 .errbox{background:#fff;border:1px solid #F0D9B5;border-radius:16px;padding:18px 20px}.errbox h3{margin:0 0 6px;font-size:17px;color:var(--warn)}.errbox p{margin:0 0 12px;color:var(--ink2);font-size:14px}
 .errbox .row{display:flex;gap:8px;flex-wrap:wrap}
 .demo-banner{background:#FFF4E5;color:var(--warn);border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.mapcol{position:sticky;top:76px}.maptoggle{display:none;margin-bottom:10px}@media(max-width:1000px){.maptoggle{display:inline-flex}}
+.mapcol{position:sticky;top:76px}.mapbox .m{height:520px}.maptoggle{display:none;margin-bottom:10px}@media(max-width:1000px){.maptoggle{display:inline-flex}}
 .src{margin-top:12px;font-size:12.5px;color:var(--muted)}
 </style>
 </head>
@@ -92,7 +92,10 @@ details.excl .ax{display:inline-block;margin:6px 6px 0 0;padding:2px 8px;border-
       if(S.budget==="free")await tryRelax("budget","any","무료만");if((S.what||[]).length&&!(S.what||[]).includes("any"))await tryRelax("what",[],"관심 분야");if((S.access||[]).length||(S.who||[]).some(x=>/휠체어|유모차/.test(x)))await tryRelax("access",[],"접근성");if(S.mode!=="any")await tryRelax("mode","any","이동수단");
       $("tips").innerHTML=(tips.length?tips:["다른 시간대나 출발지를 골라보세요"]).map(t=>`<li>${esc(t)}</li>`).join("");}else e.hidden=true;
     $("src").textContent=demo?"시연 데이터: 좌표·주소는 실제, 운영정보는 공개 안내 기준 표본. 비짓서울 API 실시간 값이 아닙니다.":`데이터 출처: 비짓서울 API (프록시 경유). 이동시간은 거리 기반 추정치입니다.`;
-    if(map){map.clear();map.add(S.origin,{color:"#7437B0",me:true,label:ctx.originLabel});open.forEach((x,i)=>map.add(x.p,{color:"#0F9D58",num:i+1,label:`${i+1}. ${x.p.name}`,onClick:()=>location.href=`place.html?id=${encodeURIComponent(x.p.id)}`}));map.fit();}
+    if(map){map.clear();map.add(S.origin,{me:true,label:ctx.originLabel});
+      open.forEach((x,i)=>{const p=x.p;const pop=`<div class="pop">${p.image?`<img src="${esc(p.image)}" alt="">`:""}<b>${esc(p.name)}</b><span>${esc([p.category,p.address].filter(Boolean).join(" · "))}</span><span>${x.tmin}분(추정) · ${p.fee.known?(p.fee.free?"무료":"유료"):"요금 확인 필요"}</span><a href="place.html?id=${encodeURIComponent(p.id)}">상세 보기 →</a></div>`;
+        map.add(p,{num:i+1,label:`${i+1}. ${p.name}`,popup:pop});});
+      map.fit();}
   }
   function hl(p,on){document.querySelectorAll(`[data-id="${CSS.escape(p.id)}"]`).forEach(el=>el.classList.toggle("hl",on));if(map)map.focus(p,on);}
   sel.onchange=run;await run();

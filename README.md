@@ -1,47 +1,34 @@
-# ZERO PROBLEMS — 닫힌 문제로
+# ZERO PROBLEMS — 배포 안내 (2026-09-10)
 
-내 상황을 입력하면 지금 갈 수 있는 곳만 남기고, 원하는 순서로 정렬해주는 서울 관광 서비스. GitHub Pages(정적) + 서버리스 프록시 구조.
+## 이미 끝난 것
+- Cloudflare Worker **배포 완료**: `https://zp-proxy.alstjqdmf.workers.dev`
+- `config.js`에 프록시 주소 반영 완료
+- 지도 계층을 Google Maps 우선 + OSM 폴백으로 교체 (번호 마커, 정보창, 현재위치 원, 카드↔마커 연동)
 
-## 연동 상태 (정직하게)
+## 직접 하실 것 3가지
 
-| 항목 | 상태 |
-|---|---|
-| 클라이언트 → 프록시 → 비짓서울 API 호출 구조 | 구현 완료 (`data.js` visitseoul 어댑터, 페이지네이션, 제한 동시성 `Promise.allSettled`) |
-| 프록시 코드 | 완성 (`proxy.worker.js`: 허용 엔드포인트·파라미터 검증·origin 제한·429 전달·캐시 시각 헤더) |
-| **프록시 배포 + API 키 등록** | **미완료 — 계정 소유자만 가능.** 배포 전에는 결과 화면에 오류 + 재시도 + “시연 데이터로 보기(실시간 아님)” 버튼 |
-| mock 조용한 대체 | 없음. 사용자가 버튼을 직접 눌러야 하며 배너·진단에 기록 |
-| 실시간 표시 | `retrievedAt`(API 호출 시각)과 `sourceUpdatedAt`(원본 갱신일) 분리 표시 |
+### 1. Worker 코드 붙여넣기 (Cloudflare 대시보드가 자동 입력을 막아 제가 못 했습니다)
+Workers & Pages → zp-proxy → **Edit code** → 왼쪽 편집기 클릭 → `Cmd+A` → `proxy.worker.js` 내용 전체 붙여넣기 → 우측 상단 **Deploy**
 
-## 배포 절차 (10분)
+### 2. API 키 Secret 등록
+zp-proxy → **Settings** → Variables and Secrets → **Add** → Type `Secret`,
+Name `VISITSEOUL_API_KEY`, Value 에 비짓서울 키 → Save → **Deploy**
 
-1. **Cloudflare Worker**: workers.cloudflare.com → Create → `proxy.worker.js` 붙여넣기 → Deploy → Settings → Variables and Secrets → `VISITSEOUL_API_KEY` (Secret) 추가.
-2. Worker 주소(예: `https://zp-proxy.<계정>.workers.dev`)를 `config.js`의 `VISITSEOUL_PROXY_URL`에 입력 → 커밋.
-3. `diagnostics.html`에서 “프록시 연결 확인” → 성공 시 첫 항목 cid 표시. 이때부터 결과 화면이 비짓서울 실시간 데이터로 동작합니다.
-4. 심사 종료 후 `ALLOW_DEMO: false`로 바꾸면 시연 데이터 버튼이 사라집니다.
+### 3. Google Maps 키 넣기
+`config.js` 의 `GOOGLE_MAPS_KEY: ""` 안에 발급받은 키를 넣고 저장.
+Google Cloud 콘솔에서 키 제한이 아래로 되어 있어야 합니다.
+- 애플리케이션 제한: 웹사이트 → `https://lkjh098-cell.github.io/*`
+- API 제한: Maps JavaScript API, Geocoding API
 
-## 파일
+## 그 다음
+이 폴더의 파일 11개를 GitHub 저장소에 **Add file → Upload files** 로 올리고 Commit.
+`https://lkjh098-cell.github.io/diagnostics.html` 에서 **프록시 연결 확인**을 눌러
+"성공 — N건 수신 / 첫 항목 cid"가 나오면 실시간 연동이 증명된 것입니다.
 
-`index.html` 표지(육하원칙) · `search.html` 결과 · `place.html` 상세 · `diagnostics.html` 진단 · `data.js` 데이터·엔진 · `shared.css` · `config.js` 공개 설정(비밀 없음) · `proxy.worker.js` · 로고 2개
+## 확인 순서
+1. diagnostics.html → 데이터 소스 `visitseoul`, 프록시 URL 표시, mock 사용 `아니오`
+2. index.html → 조건 고르고 "갈 수 있는 곳 보기"
+3. search.html → 결과 카드 + 지도 마커, 카드에 마우스 올리면 마커 확대
+4. 카드 클릭 → place.html 상세 + 지도 + 길찾기
 
-## 확인된 비짓서울 명세
-
-`POST /api/v1/contents/list` {com_ctgry_sn, lang_code_id, keyword, sort_type(latest|abc), page_no(50건/쪽)} · `POST /api/v1/contents/info` {cid} · 헤더 `VISITSEOUL-API-KEY` · 브라우저 직접 호출은 CORS 차단(2026-09-07 확인) · 카테고리 코드는 실측값(`ZP.categoryCodes`), 역사관광 코드 미확인.
-필드: cid, post_sj, cate_depth, com_ctgry_sn, adres, map_position_x/y, subway_info, main_img, cmmn_use_time, closed_days, business_days, schdul_info_bgnde/endde, trrsrt_use_chrge(F/C), trrsrt_use_chrge_guidance, cmmn_hmpg_lang[], multi_lang_list, disabled_facility[], cmmn_important, cmmn_telno, cmmn_hmpg_url, updt_dt_text. 응답 중첩 구조는 방어적으로 탐색(`ZP.dig`).
-
-## 개인정보
-
-위치는 브라우저 권한 후 클라이언트에서만 사용. 조건은 `sessionStorage`에만 저장. 서버 저장 없음.
-
-## 검증 (2026-09-10, 헤드리스 Chromium, 네트워크 차단)
-
-- 문구 3건 정확히 교체 · 요약 바 칩형(선택 즉시 갱신·미선택은 점선 안내) · 상관없음/기타 규칙(상호 배타·직접 입력·Enter 확정·삭제) · 단계 표시 `n/6` · 자동 이동 없음 · 필수 누락 시 해당 탭 포커스 · 스크롤 위치 유지
-- 주소 검색 실패 시 대체 좌표 없음(origin null 유지) + 안내문 · 후보 선택 후에만 진행
-- 프록시 미설정 시 mock 카드 0개 + 명시적 오류 화면 · 시연 모드는 버튼으로만 · 배너 표시
-- 제외 장소는 접힌 영역에만 · 확인 필요 항목 분리 · 결과 0건 시 완화 제안 수치 · 스켈레톤 · 모바일(360/390) 지도 접힘 · 가로 스크롤 없음 · pageerror 0
-
-## 남은 항목 (외부 권한)
-
-1. Cloudflare Worker 배포 + `VISITSEOUL_API_KEY` Secret (계정 소유자)
-2. Google Maps 키(리퍼러 제한) → Google 지도·지오코딩. 없으면 OSM + 역·권역 프리셋 검색
-3. 실제 이동시간(Routes API) — 현재 “추정” 표기
-4. 라이브 네트워크 증거(프록시 요청·cid 일치)는 1번 완료 후 `diagnostics.html`에서 확인
+키 2개가 들어가기 전까지는 결과 화면에 "비짓서울 데이터를 불러오지 못했습니다" + 재시도 + "시연 데이터로 보기" 버튼이 뜹니다. 이는 의도된 동작이며, mock으로 몰래 넘어가지 않습니다.

@@ -144,19 +144,46 @@
     if(ZP.config.GOOGLE_MAPS_KEY){ try{ const r=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q+" 서울")}&language=ko&region=kr&key=${encodeURIComponent(ZP.config.GOOGLE_MAPS_KEY)}`); const j=await r.json(); if(j.status==="OK") return j.results.slice(0,5).map(x=>({label:x.formatted_address,lat:x.geometry.location.lat,lng:x.geometry.location.lng,source:"google"})); }catch(e){} }
     return local; };
 
+  /* ── 지도: Google Maps 우선, 키 없으면 Leaflet/OSM. 지도앱 수준 인터랙션(번호 마커·정보창·현재위치·경로) ── */
   ZP.map=function(el,center,zoom,onFail){
     const key=ZP.config.GOOGLE_MAPS_KEY; const api={markers:[],provider:null};
-    function leaflet(){ if(!global.L){onFail&&onFail("지도 라이브러리를 불러오지 못했습니다. 결과 목록은 계속 사용할 수 있습니다.");return null;}
-      const m=global.L.map(el,{scrollWheelZoom:false}).setView([center.lat,center.lng],zoom); global.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(m);
-      api.provider="osm"; api.add=(pos,opt)=>{const mk=global.L.circleMarker([pos.lat,pos.lng],{radius:opt.me?8:9,color:"#fff",weight:3,fillColor:opt.color,fillOpacity:1}).addTo(m);if(opt.label)mk.bindTooltip(opt.label,{permanent:!!opt.me,direction:"top",offset:[0,-8]});if(opt.onClick)mk.on("click",opt.onClick);api.markers.push({mk,pos,opt});return mk;};
-      api.focus=(pos,on)=>{const it=api.markers.find(x=>x.pos===pos);if(it)it.mk.setStyle({radius:on?13:9});if(on)m.panTo([pos.lat,pos.lng]);}; api.fit=()=>{if(api.markers.length)m.fitBounds(api.markers.map(x=>[x.pos.lat,x.pos.lng]),{padding:[24,24]});}; api.clear=()=>{api.markers.forEach(x=>x.mk.remove());api.markers=[];}; api.resize=()=>m.invalidateSize(); return api; }
+    function leaflet(){ if(!global.L){onFail&&onFail("지도를 불러오지 못했습니다. 결과 목록은 계속 사용할 수 있습니다.");return null;}
+      const m=global.L.map(el,{scrollWheelZoom:true,zoomControl:true}).setView([center.lat,center.lng],zoom);
+      global.L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:20,attribution:"© OpenStreetMap, © CARTO"}).addTo(m);
+      api.provider="osm";
+      api.add=(pos,opt)=>{ let mk;
+        if(opt.me){ mk=global.L.circleMarker([pos.lat,pos.lng],{radius:8,color:"#fff",weight:3,fillColor:"#7437B0",fillOpacity:1}).addTo(m);
+          global.L.circle([pos.lat,pos.lng],{radius:120,color:"#7437B0",weight:1,fillOpacity:.08}).addTo(m); mk.bindTooltip(opt.label,{permanent:true,direction:"top",offset:[0,-8],className:"me-tip"}); }
+        else { const icon=global.L.divIcon({className:"zp-pin",html:`<div class="pin ${opt.dim?"dim":""}"><b>${opt.num||""}</b></div>`,iconSize:[30,38],iconAnchor:[15,38],popupAnchor:[0,-34]});
+          mk=global.L.marker([pos.lat,pos.lng],{icon,title:opt.label}).addTo(m); if(opt.popup) mk.bindPopup(opt.popup,{maxWidth:250}); if(opt.onClick) mk.on("click",opt.onClick); }
+        api.markers.push({mk,pos,opt}); return mk; };
+      api.focus=(pos,on)=>{const it=api.markers.find(x=>x.pos===pos);if(!it)return;const el2=it.mk.getElement&&it.mk.getElement();if(el2)el2.classList.toggle("on",on);if(on){m.panTo([pos.lat,pos.lng]);it.mk.openPopup&&it.mk.openPopup();}};
+      api.fit=()=>{if(api.markers.length)m.fitBounds(api.markers.map(x=>[x.pos.lat,x.pos.lng]),{padding:[40,40],maxZoom:16});};
+      api.clear=()=>{api.markers.forEach(x=>x.mk.remove());api.markers=[];}; api.resize=()=>m.invalidateSize(); return api; }
     if(!key) return leaflet();
-    return new Promise(res=>{ const s=document.createElement("script"); s.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&language=ko`; s.async=true;
-      s.onerror=()=>{onFail&&onFail("Google Maps를 불러오지 못했습니다. OpenStreetMap으로 표시합니다.");res(leaflet());};
-      s.onload=()=>{const g=global.google.maps;const m=new g.Map(el,{center,zoom,mapTypeControl:false,streetViewControl:false});api.provider="google";
-        api.add=(pos,opt)=>{const mk=new g.Marker({position:pos,map:m,title:opt.label||"",label:opt.num?String(opt.num):undefined});if(opt.onClick)mk.addListener("click",opt.onClick);api.markers.push({mk,pos,opt});return mk;};
-        api.focus=(pos,on)=>{const it=api.markers.find(x=>x.pos===pos);if(it)it.mk.setAnimation(on?g.Animation.BOUNCE:null);if(on)m.panTo(pos);}; api.fit=()=>{const b=new g.LatLngBounds();api.markers.forEach(x=>b.extend(x.pos));if(api.markers.length)m.fitBounds(b);}; api.clear=()=>{api.markers.forEach(x=>x.mk.setMap(null));api.markers=[];}; api.resize=()=>g.event.trigger(m,"resize"); res(api);};
-      document.head.appendChild(s); }); };
+    return new Promise(res=>{
+      const done=()=>{ const g=global.google.maps;
+        const m=new g.Map(el,{center,zoom,mapTypeControl:false,streetViewControl:true,fullscreenControl:true,zoomControl:true,gestureHandling:"greedy",clickableIcons:true,
+          mapTypeId:"roadmap", styles:[{featureType:"poi.business",stylers:[{visibility:"on"}]}]});
+        const info=new g.InfoWindow({maxWidth:260}); api.provider="google";
+        api.add=(pos,opt)=>{ let mk;
+          if(opt.me){ mk=new g.Marker({position:pos,map:m,zIndex:999,title:opt.label,
+              icon:{path:g.SymbolPath.CIRCLE,scale:8,fillColor:"#7437B0",fillOpacity:1,strokeColor:"#fff",strokeWeight:3}});
+            new g.Circle({map:m,center:pos,radius:120,strokeColor:"#7437B0",strokeWeight:1,strokeOpacity:.5,fillColor:"#7437B0",fillOpacity:.08}); }
+          else { mk=new g.Marker({position:pos,map:m,title:opt.label,label:opt.num?{text:String(opt.num),color:"#fff",fontSize:"12px",fontWeight:"700"}:undefined,
+              icon:{path:"M15 0C6.7 0 0 6.7 0 15c0 11 15 23 15 23s15-12 15-23C30 6.7 23.3 0 15 0z",fillColor:opt.dim?"#B0B8C1":"#0F9D58",fillOpacity:1,strokeColor:"#fff",strokeWeight:2,scale:1,labelOrigin:new g.Point(15,14),anchor:new g.Point(15,38)}});
+            if(opt.popup){ mk.addListener("click",()=>{info.setContent(opt.popup);info.open({anchor:mk,map:m});}); }
+            else if(opt.onClick) mk.addListener("click",opt.onClick); }
+          api.markers.push({mk,pos,opt}); return mk; };
+        api.focus=(pos,on)=>{const it=api.markers.find(x=>x.pos===pos);if(!it)return;
+          it.mk.setZIndex&&it.mk.setZIndex(on?900:1); const ic=it.mk.getIcon&&it.mk.getIcon(); if(ic&&ic.path){ic.scale=on?1.35:1;it.mk.setIcon(ic);} if(on){m.panTo(pos);if(it.opt.popup){info.setContent(it.opt.popup);info.open({anchor:it.mk,map:m});}}};
+        api.fit=()=>{const b=new g.LatLngBounds();api.markers.forEach(x=>b.extend(x.pos));if(api.markers.length){m.fitBounds(b,60);if(api.markers.length===1)m.setZoom(16);}};
+        api.clear=()=>{api.markers.forEach(x=>x.mk.setMap(null));api.markers=[];info.close();};
+        api.resize=()=>g.event.trigger(m,"resize"); res(api); };
+      if(global.google&&global.google.maps){done();return;}
+      const s=document.createElement("script"); s.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&language=ko&region=KR`; s.async=true;
+      s.onerror=()=>{onFail&&onFail("Google Maps 키가 거부됐습니다. 리퍼러 제한과 API 사용 설정을 확인하세요. 임시로 OpenStreetMap을 표시합니다.");res(leaflet());};
+      s.onload=done; document.head.appendChild(s); }); };
   ZP.directionsUrl=(to,mode)=>`https://www.google.com/maps/dir/?api=1&destination=${to.lat},${to.lng}&travelmode=${mode==="car"?"driving":mode==="transit"?"transit":"walking"}`;
   ZP.esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
