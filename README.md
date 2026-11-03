@@ -4,7 +4,7 @@
 
 ## 실행 및 배포
 
-빌드 과정 없는 정적 사이트입니다. 저장소 루트의 HTML·JS·CSS·이미지를 GitHub Pages에 배포합니다. `python3 -m http.server 8765`로 로컬 화면을 열 수 있습니다. 실제 API는 Worker에서 허용한 Origin으로 접속해야 합니다. `config.js`는 공개 설정이고 비밀 값을 포함하지 않습니다.
+정적 사이트이며, GitHub Pages 배포 때만 브라우저용 지도 키를 주입하는 준비 과정을 실행합니다. 로컬에서는 `python3 -m http.server 8765`로 화면을 열 수 있습니다. 실제 API는 Worker에서 허용한 Origin으로 접속해야 합니다. 저장소의 `config.js`는 공개 설정이며 `GOOGLE_MAPS_KEY`를 빈 문자열로 유지합니다.
 
 기존 `zp-proxy` Worker와 계정 설정은 그대로 사용합니다. `proxy.worker.js`는 기존 원본이며 이 수정의 배포 대상이 아닙니다. 비짓서울 API 키는 기존 Worker Secret에만 존재합니다.
 
@@ -86,8 +86,10 @@ node tests/syntax.cjs
 
 ## 키를 제외한 공개 소스
 
-이 사본은 현재 배포 소스에서 Google 지도 API 키를 제거한 정적 사이트입니다. `config.js`의 `GOOGLE_MAPS_KEY`는 빈 문자열이며, 키가 없을 때의 기존 지도 동작을 사용합니다. HTML·JavaScript·CSS는 빌드 없이 실행합니다.
+공개 저장소 `lkjh098-cell/lkjh098-cell.github.io`에는 실제 Google 지도 키를 커밋하지 않습니다. GitHub 저장소의 **Settings → Secrets and variables → Actions**에 `GOOGLE_MAPS_BROWSER_KEY`라는 Secret을 등록하고, **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 설정합니다. 실제 키는 Secret 입력란에만 등록하며 소스·README·커밋 메시지에는 쓰지 않습니다.
 
-Google Maps JavaScript API를 브라우저에서 사용하면 실행 중인 키는 이용자에게 보입니다. 실제 서비스에 키를 설정할 경우 Google Cloud에서 허용 웹사이트 HTTP 리퍼러와 사용 API를 제한해야 합니다. `config.local.js`와 `.env*`는 로컬 자격 증명 유출을 막기 위해 추적 대상에서 제외했습니다. 이 파일들이 자동으로 로드되는 것은 아닙니다.
+`main` 브랜치에 푸시하거나 Actions에서 수동 실행하면 `.github/workflows/deploy-pages.yml`이 `python3 scripts/build-pages.py`를 실행합니다. Python 표준 라이브러리만 사용합니다. 키가 없거나 형식이 잘못되었거나 소스 키가 비어 있지 않으면 배포 준비를 실패시킵니다. 소스 `config.js`를 변경하지 않고 `_site/config.js`에 JSON 문자열로 키를 주입합니다. 공개 실행 파일 18개와 `.nojekyll`만 배포하며 README·설정 예시·Worker 원본·로컬 설정·빌드 스크립트는 배포하지 않습니다. 키 원문은 빌드 로그에 출력하지 않습니다. `_site/`, `config.local.*`, `.env*`는 추적 대상에서 제외하며 로컬 설정 파일은 자동으로 로드되지 않습니다.
 
-이 사본에는 Git 이력이 포함되지 않습니다. 기존 저장소 이력에는 키가 남아 있으므로 기존 저장소의 공개 전환과 키 폐기·교체 및 이력 처리는 별도로 확인해야 합니다.
+이 방식은 **GitHub 소스와 커밋 이력에 실제 키를 저장하지 않는 방법**입니다. 배포된 `_site/config.js`와 브라우저의 Google API 요청에서는 실행 중인 키가 보이고, Pages 배포 아티팩트에도 포함됩니다. 브라우저용 키를 비밀로 숨기는 방식은 아닙니다.
+
+Google Cloud에서 이 키의 **애플리케이션 제한**을 **웹사이트(HTTP 리퍼러)**로 설정하고 허용 항목은 `https://lkjh098-cell.github.io/*` 하나로 제한합니다. **API 제한**은 **Maps JavaScript API**와 **Geocoding API**만 허용하고 두 API를 활성화합니다. 로컬 주소나 다른 도메인은 이 배포 키에 추가하지 않습니다. 키 교체가 필요하면 Secret을 갱신하고 다시 배포합니다.

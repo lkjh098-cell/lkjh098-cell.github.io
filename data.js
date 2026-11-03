@@ -162,13 +162,27 @@
 
   ZP.weather=async function(lat,lng){try{const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=precipitation,temperature_2m&timezone=Asia%2FSeoul`);const j=await r.json();return{rainy:(j.current&&j.current.precipitation>0.2),temp:j.current&&j.current.temperature_2m};}catch(e){return null;}};
 
-  /* ── 지오코딩: Google 키 있으면 Geocoding API, 없으면 내부 프리셋(역·권역·관광지명) 매칭. 실패 시 대체 좌표 없음 ── */
-  ZP.geocode=async function(q){q=(q||'').trim();if(!q)return [];
-    const local=Object.keys(ZP.areas).filter(a=>a.split('·').some(t=>q.includes(t)||t.includes(q))).map(a=>({label:a,...ZP.areas[a],source:'preset'}));
+  /* ── 지오코딩: 정확히 일치하는 프리셋 우선. 나머지는 리퍼러 제한을 지원하는 Maps JS 서비스 사용 ── */
+  ZP.geocode=async function(q){q=String(q||'').trim().replace(/\s+/g,' ');if(!q)return [];
+    const local=Object.keys(ZP.areas).filter(a=>a===q||a.split('·').some(t=>t.trim()===q)).map(a=>({label:a,...ZP.areas[a],source:'preset'}));
     if(local.length||!ZP.config.GOOGLE_MAPS_KEY)return local;
-    const controller=new AbortController();let timer;
-    const timeout=new Promise(resolve=>{timer=setTimeout(()=>{controller.abort();resolve(null);},Number(ZP.config.GEOCODE_TIMEOUT_MS)||8000);});
-    try{const request=(async()=>{const r=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q+' 서울')}&language=ko&region=kr&key=${encodeURIComponent(ZP.config.GOOGLE_MAPS_KEY)}`,{signal:controller.signal});if(!r.ok)return null;return r.json();})();const j=await Promise.race([request,timeout]);if(j&&j.status==='OK'&&Array.isArray(j.results))return j.results.filter(x=>x&&x.geometry&&x.geometry.location&&Number.isFinite(x.geometry.location.lat)&&Number.isFinite(x.geometry.location.lng)).slice(0,5).map(x=>({label:String(x.formatted_address||q),lat:x.geometry.location.lat,lng:x.geometry.location.lng,source:'google'}));}catch(e){}finally{clearTimeout(timer);}return local;
+    let timer;
+    const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(Object.assign(new Error('위치 검색 응답 시간이 초과되었습니다.'),{code:'GEOCODE_TIMEOUT'})),Number(ZP.config.GEOCODE_TIMEOUT_MS)||8000);});
+    try{
+      const request=(async()=>{
+        const maps=await ZP._loadGoogleMaps();
+        const library=typeof maps.importLibrary==='function'?await maps.importLibrary('geocoding'):maps;
+        if(typeof library.Geocoder!=='function')throw Object.assign(new Error('위치 검색 모듈을 불러오지 못했습니다.'),{code:'GEOCODE_UNAVAILABLE'});
+        const response=await new library.Geocoder().geocode({address:q+' 서울',region:'kr',fulfillOnZeroResults:true});
+        const results=response&&Array.isArray(response.results)?response.results:[];
+        return results.map(x=>{const p=x&&x.geometry&&x.geometry.location;return{label:String(x&&x.formatted_address||q),lat:p&&typeof p.lat==='function'?p.lat():NaN,lng:p&&typeof p.lng==='function'?p.lng():NaN,source:'google'};}).filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lng)).slice(0,5);
+      })();
+      return await Promise.race([request,timeout]);
+    }catch(error){
+      if(error&&error.code==='ZERO_RESULTS')return [];
+      if(error&&error.code)throw error;
+      throw Object.assign(new Error('위치 검색 서비스에 연결하지 못했습니다.'),{code:'GEOCODE_NETWORK_ERROR'});
+    }finally{clearTimeout(timer);}
   };
 
 /* data.js의 기존 ZP.map 정의 전체를 이 블록으로 교체합니다. */
@@ -281,6 +295,7 @@
     ZP._googleMapsLoad=state;
     return state.promise;
   }
+  ZP._loadGoogleMaps=()=>googleMapsLoader(ZP.config.GOOGLE_MAPS_KEY);
 
   ZP.map=function(el,center,zoom,onFail){
     const key=ZP.config.GOOGLE_MAPS_KEY;

@@ -2,4 +2,9 @@
 
 # Local credentials
 config.local.js
+config.local.*
 .env*
+
+# Generated Pages artifacts may contain the browser key.
+_site/
+.pages-build-*/
